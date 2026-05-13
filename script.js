@@ -162,14 +162,20 @@ async function showDashboard() {
 // Load keys from GitHub Gist
 async function loadKeys() {
     try {
-        const response = await fetch(`https://api.github.com/gists/${GIST_ID}`);
-        const gist = await response.json();
+        // Try using API first (no token needed for public gists)
+        let response = await fetch(`https://api.github.com/gists/${GIST_ID}`);
         
-        // Get the first file in the gist
-        const fileName = Object.keys(gist.files)[0];
-        const content = gist.files[fileName].content;
-        
-        keysData = JSON.parse(content);
+        if (!response.ok) {
+            // Fallback to raw URL if API fails
+            response = await fetch(`https://gist.githubusercontent.com/davidpavle000-del/${GIST_ID}/raw/?t=${Date.now()}`);
+            const content = await response.text();
+            keysData = JSON.parse(content);
+        } else {
+            const gist = await response.json();
+            const fileName = Object.keys(gist.files)[0];
+            const content = gist.files[fileName].content;
+            keysData = JSON.parse(content);
+        }
         
         updateStatistics();
         renderKeysTable();
@@ -514,6 +520,35 @@ function filterKeys() {
 async function refreshKeys() {
     await loadKeys();
     alert('Keys refreshed successfully!');
+}
+
+// Check if token is valid
+async function checkToken() {
+    if (!GITHUB_TOKEN) {
+        alert('❌ No token found in browser storage.\n\nPlease enter your token when generating/modifying keys.');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+            headers: {
+                'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github+json'
+            }
+        });
+        
+        if (response.ok) {
+            alert('✅ Token is valid and working!\n\nYou can generate and modify keys.');
+        } else if (response.status === 401) {
+            alert('❌ Token is invalid or expired.\n\nPlease enter a new token when generating keys.');
+            localStorage.removeItem('github_token');
+            GITHUB_TOKEN = null;
+        } else {
+            alert(`⚠️ Token check returned HTTP ${response.status}\n\nTry generating a key to test it.`);
+        }
+    } catch (error) {
+        alert('❌ Error checking token:\n\n' + error.message);
+    }
 }
 
 // Export data
