@@ -198,12 +198,17 @@ async function saveKeys() {
     }
     
     try {
+        console.log('[DEBUG] Attempting to save keys to Gist...');
+        console.log('[DEBUG] Token exists:', !!GITHUB_TOKEN);
+        console.log('[DEBUG] Number of keys:', keysData.keys.length);
+        
         const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
             method: 'PATCH',
             headers: {
                 'Authorization': `Bearer ${GITHUB_TOKEN}`,
                 'Accept': 'application/vnd.github+json',
-                'X-GitHub-Api-Version': '2022-11-28'
+                'X-GitHub-Api-Version': '2022-11-28',
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 files: {
@@ -214,25 +219,29 @@ async function saveKeys() {
             })
         });
         
+        console.log('[DEBUG] Response status:', response.status);
+        
         if (!response.ok) {
             const errorData = await response.json();
-            console.error('GitHub API Error:', errorData);
+            console.error('[ERROR] GitHub API Error:', errorData);
             
             // If token is invalid, clear it and ask again
             if (response.status === 401) {
                 localStorage.removeItem('github_token');
                 GITHUB_TOKEN = null;
-                alert('Invalid token. Please try again.');
+                alert('❌ Invalid token. Please try again with a valid token.');
                 return await saveKeys(); // Retry
             }
             
+            alert(`❌ Failed to save keys!\n\nHTTP ${response.status}: ${errorData.message || 'Unknown error'}\n\nCheck console for details.`);
             throw new Error(`Failed to update gist: ${response.status} ${errorData.message || ''}`);
         }
         
+        console.log('[SUCCESS] Keys saved successfully!');
         return true;
     } catch (error) {
-        console.error('Error saving keys:', error);
-        alert('Failed to save keys to GitHub Gist. Check console for details.');
+        console.error('[ERROR] Error saving keys:', error);
+        alert('❌ Failed to save keys to GitHub Gist.\n\nError: ' + error.message + '\n\nCheck console for details.');
         return false;
     }
 }
