@@ -1,7 +1,7 @@
 // Configuration
 const ADMIN_PASSWORD = 'Idkyo123@'; // Change this to your secure password
 const GIST_ID = 'ce31429a2f55e004da6a538b73346e4c';
-const GITHUB_TOKEN = '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'; // You need to create a GitHub Personal Access Token
+let GITHUB_TOKEN = localStorage.getItem('github_token') || null; // Token stored in browser
 
 // Data storage
 let keysData = {
@@ -181,9 +181,14 @@ async function loadKeys() {
 
 // Save keys to GitHub Gist
 async function saveKeys() {
-    if (!GITHUB_TOKEN || GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE') {
-        alert('Please set your GitHub Personal Access Token in script.js');
-        return false;
+    if (!GITHUB_TOKEN) {
+        const token = prompt('Please enter your GitHub Personal Access Token:');
+        if (!token) {
+            alert('Token is required to save keys');
+            return false;
+        }
+        GITHUB_TOKEN = token;
+        localStorage.setItem('github_token', token);
     }
     
     try {
@@ -206,6 +211,15 @@ async function saveKeys() {
         if (!response.ok) {
             const errorData = await response.json();
             console.error('GitHub API Error:', errorData);
+            
+            // If token is invalid, clear it and ask again
+            if (response.status === 401) {
+                localStorage.removeItem('github_token');
+                GITHUB_TOKEN = null;
+                alert('Invalid token. Please try again.');
+                return await saveKeys(); // Retry
+            }
+            
             throw new Error(`Failed to update gist: ${response.status} ${errorData.message || ''}`);
         }
         
