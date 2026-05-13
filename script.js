@@ -1,7 +1,7 @@
 // Configuration
 const ADMIN_PASSWORD = 'Idkyo123@'; // Change this to your secure password
 const GIST_ID = 'ce31429a2f55e004da6a538b73346e4c';
-const GITHUB_TOKEN = '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'; // You need to create a GitHub Personal Access Token
+const GITHUB_TOKEN = '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'; // You need to create a GitHub Personal Access Token
 
 // Data storage
 let keysData = {
@@ -10,8 +10,120 @@ let keysData = {
 
 let currentEditKey = null;
 
+// Particle System
+class Particle {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.reset();
+    }
+    
+    reset() {
+        this.x = Math.random() * this.canvas.width;
+        this.y = Math.random() * -this.canvas.height;
+        this.speed = 1.5 + Math.random() * 2.5;
+        this.size = 1 + Math.random() * 3;
+        this.opacity = 0.4 + Math.random() * 0.6;
+        this.vx = 0;
+        this.vy = this.speed;
+    }
+    
+    update(mouseX, mouseY) {
+        // Mouse repulsion
+        const dx = this.x - mouseX;
+        const dy = this.y - mouseY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const minDistance = 100;
+        
+        if (distance < minDistance) {
+            const force = (minDistance - distance) / minDistance;
+            this.vx += (dx / distance) * force * 2;
+            this.vy += (dy / distance) * force * 2;
+        }
+        
+        // Apply velocity
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Damping
+        this.vx *= 0.95;
+        this.vy *= 0.95;
+        
+        // Gravity (always falling)
+        this.vy += 0.08;
+        
+        // Reset if out of bounds
+        if (this.y > this.canvas.height + 10) {
+            this.reset();
+        }
+        if (this.x < -10 || this.x > this.canvas.width + 10) {
+            this.x = Math.random() * this.canvas.width;
+        }
+    }
+    
+    draw(ctx) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Glow effect
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+}
+
+let particles = [];
+let canvas, ctx;
+let mouseX = -1000, mouseY = -1000;
+
+function initParticles() {
+    canvas = document.getElementById('particleCanvas');
+    if (!canvas) return;
+    
+    ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Create particles
+    const particleCount = 200;
+    for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle(canvas));
+    }
+    
+    // Mouse tracking
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+    
+    // Resize handler
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+    
+    // Animation loop
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        particles.forEach(particle => {
+            particle.update(mouseX, mouseY);
+            particle.draw(ctx);
+        });
+        
+        requestAnimationFrame(animate);
+    }
+    
+    animate();
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize particles
+    initParticles();
+    
     // Check if already logged in
     if (sessionStorage.getItem('adminLoggedIn') === 'true') {
         showDashboard();
@@ -78,8 +190,9 @@ async function saveKeys() {
         const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
             method: 'PATCH',
             headers: {
-                'Authorization': `token ${GITHUB_TOKEN}`,
-                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github+json',
+                'X-GitHub-Api-Version': '2022-11-28'
             },
             body: JSON.stringify({
                 files: {
@@ -91,7 +204,9 @@ async function saveKeys() {
         });
         
         if (!response.ok) {
-            throw new Error('Failed to update gist');
+            const errorData = await response.json();
+            console.error('GitHub API Error:', errorData);
+            throw new Error(`Failed to update gist: ${response.status} ${errorData.message || ''}`);
         }
         
         return true;
