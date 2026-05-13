@@ -1,7 +1,7 @@
 // Configuration
 const ADMIN_PASSWORD = 'Idkyo123@'; // Change this to your secure password
 const GIST_ID = 'ce31429a2f55e004da6a538b73346e4c';
-const GITHUB_TOKEN = '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'; // You need to create a GitHub Personal Access Token
+const GITHUB_TOKEN = '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'; // You need to create a GitHub Personal Access Token
 
 // Data storage
 let keysData = {
