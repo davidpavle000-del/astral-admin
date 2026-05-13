@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astral Client - Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="screen active">
+            <div class="login-box">
+                <h1>🔐 Astral Admin</h1>
+                <p class="subtitle">Key Management System</p>
+                <input type="password" id="adminPassword" placeholder="Admin Password" class="input-field">
+                <button onclick="login()" class="btn btn-primary">Login</button>
+                <p id="loginError" class="error-message"></p>
+            </div>
+        </div>
+
+        <!-- Dashboard Screen -->
+        <div id="dashboardScreen" class="screen">
+            <div class="header">
+                <h1>Astral Client - Admin Dashboard</h1>
+                <button onclick="logout()" class="btn btn-secondary">Logout</button>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🔑</div>
+                    <div class="stat-info">
+                        <h3 id="totalKeys">0</h3>
+                        <p>Total Keys</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <h3 id="activeKeys">0</h3>
+                        <p>Active Keys</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">❌</div>
+                    <div class="stat-info">
+                        <h3 id="disabledKeys">0</h3>
+                        <p>Disabled Keys</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <h3 id="totalUsers">0</h3>
+                        <p>Total Users</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-bar">
+                <button onclick="showGenerateModal()" class="btn btn-primary">➕ Generate Key</button>
+                <button onclick="refreshKeys()" class="btn btn-secondary">🔄 Refresh</button>
+                <button onclick="exportData()" class="btn btn-secondary">💾 Export Data</button>
+                <input type="text" id="searchInput" placeholder="🔍 Search keys or users..." class="search-input" oninput="filterKeys()">
+            </div>
+
+            <!-- Keys Table -->
+            <div class="table-container">
+                <table class="keys-table">
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>User</th>
+                            <th>HWID</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Expires</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="keysTableBody">
+                        <!-- Keys will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate Key Modal -->
+    <div id="generateModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeGenerateModal()">&times;</span>
+            <h2>Generate New Key</h2>
+            <div class="form-group">
+                <label>Key Type:</label>
+                <select id="keyType" class="input-field">
+                    <option value="lifetime">Lifetime</option>
+                    <option value="30days">30 Days</option>
+                    <option value="7days">7 Days</option>
+                    <option value="1day">1 Day</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Number of Keys:</label>
+                <input type="number" id="keyCount" value="1" min="1" max="100" class="input-field">
+            </div>
+            <button onclick="generateKeys()" class="btn btn-primary">Generate</button>
+            <div id="generatedKeys" class="generated-keys"></div>
+        </div>
+    </div>
+
+    <!-- Edit Key Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Edit Key</h2>
+            <div class="form-group">
+                <label>Key:</label>
+                <input type="text" id="editKey" class="input-field" readonly>
+            </div>
+            <div class="form-group">
+                <label>User:</label>
+                <input type="text" id="editUser" class="input-field">
+            </div>
+            <div class="form-group">
+                <label>HWID:</label>
+                <input type="text" id="editHWID" class="input-field">
+            </div>
+            <div class="form-group">
+                <label>Status:</label>
+                <select id="editStatus" class="input-field">
+                    <option value="true">Enabled</option>
+                    <option value="false">Disabled</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Expiry Date:</label>
+                <input type="datetime-local" id="editExpiry" class="input-field">
+            </div>
+            <button onclick="saveKeyEdit()" class="btn btn-primary">Save Changes</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
